@@ -63,88 +63,171 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 
 ## <div align="center">Quick Start Examples</div>
 
-<details open>
-<summary>Install</summary>
+This tutorial is based on the YOLOv5 repository by Ultralytics. This repository shows training on your own custom objects.
 
-Clone repo and install [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) in a
-[**Python>=3.7.0**](https://www.python.org/) environment, including
-[**PyTorch>=1.7**](https://pytorch.org/get-started/locally/).
+To train custom dataset using YOLOv5 take the following steps:
 
-```bash
-git clone https://github.com/ultralytics/yolov5  # clone
-cd yolov5
-pip install -r requirements.txt  # install
-```
+* Install YOLOv5 dependencies
+* Download custom YOLOv5 dataset
+* Prepare Pre-Trained Weights
+* Custom dataset YOLOv5 training
+* Evaluate YOLOv5 performance
+* Visualize YOLOv5 training data
+* Run YOLOv5 inference on test images
+* Export saved YOLOv5 weights
 
-</details>
+## Training Preparations
 
-<details open>
-<summary>Inference</summary>
+Install YOLOv5 dependencies
+<details><summary> <b>Expand</b> </summary>
 
-Inference with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)
-. [Models](https://github.com/ultralytics/yolov5/tree/master/models) download automatically from the latest
-YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
-
-```python
-import torch
-
-# Model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5m, yolov5l, yolov5x, custom
-
-# Images
-img = 'https://ultralytics.com/images/zidane.jpg'  # or file, Path, PIL, OpenCV, numpy, list
-
-# Inference
-results = model(img)
-
-# Results
-results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
-```
+* clone YOLOv5 repository
+      
+      !git clone https://github.com/ultralytics/yolov5  # clone
+      %cd yolov5
+  
+* Install necessary dependencies
+      
+      !pip install -qr requirements.txt
 
 </details>
 
+Download custom YOLOv5 dataset
+<details><summary> <b>Expand</b> </summary>
+  
+* Install Roboflow dependencies
+  
+      !pip install -q roboflow
+      from roboflow import Roboflow
+      rf = Roboflow(model_format="yolov5", notebook="roboflow-yolor")
+  
+* Download Dataset from Roboflow
+    
+      %cd /content/yolov5
+      from roboflow import Roboflow
+      rf = Roboflow(api_key="85cNlMEKyhhCdduuKla4")
+      project = rf.workspace("joseph-nelson").project("uno-cards")
+      dataset = project.version(3).download("yolov5")
+  
+* See YAML category/class
+      
+      %cat {dataset.location}/data.yaml
+   
+* Set-up Environment
+   
+      import os
+      os.environ["DATASET_DIRECTORY"] = "/content/datasets"
 
+</details>
 
-<details>
-<summary>Inference with detect.py</summary>
+Prepare Pre-trained weight
+<details><summary> <b>Expand</b> </summary>
 
-`detect.py` runs inference on a variety of sources, downloading [models](https://github.com/ultralytics/yolov5/tree/master/models) automatically from
-the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
-
-```bash
-python detect.py --source 0  # webcam
-                          img.jpg  # image
-                          vid.mp4  # video
-                          path/  # directory
-                          path/*.jpg  # glob
-                          'https://youtu.be/Zgi9g1ksQHc'  # YouTube
-                          'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
-```
+* Get pretrained YOLOv5s.pt
+      
+      import torch
+      # Model
+      model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5m, yolov5l, yolov5x, custom
 
 </details>
 
-<details>
-<summary>Training</summary>
+## Training
 
-The commands below reproduce YOLOv5 [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh)
-results. [Models](https://github.com/ultralytics/yolov5/tree/master/models)
-and [datasets](https://github.com/ultralytics/yolov5/tree/master/data) download automatically from the latest
-YOLOv5 [release](https://github.com/ultralytics/yolov5/releases). Training times for YOLOv5n/s/m/l/x are
-1/2/4/6/8 days on a V100 GPU ([Multi-GPU](https://github.com/ultralytics/yolov5/issues/475) times faster). Use the
-largest `--batch-size` possible, or pass `--batch-size -1` for
-YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092). Batch sizes shown for V100-16GB.
+Here, we are able to pass a number of arguments:
 
-```bash
-python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 128
-                                       yolov5s                                64
-                                       yolov5m                                40
-                                       yolov5l                                24
-                                       yolov5x                                16
+* img: define input image size
+* batch: determine batch size
+* epochs: define the number of training epochs. (Note: often, 3000+ are common here!)
+* data: Our dataset locaiton is saved in the dataset.location
+* weights: specify a path to weights to start transfer learning from. Here we choose the generic COCO pretrained checkpoint.
+* cache: cache images for faster training
+
+```
+%cd /content/yolov5
+!python train.py --img 416 --batch 16 --epochs 150 --data {dataset.location}/data.yaml --weights yolov5s.pt --cache
 ```
 
-<img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
+## Evaluate Custom YOLOv5 Detector Performance
+
+Evaluate custom YOLOv5 model
+<details><summary> <b>Expand</b> </summary>
+ 
+* Start Tensorboard, run after training is finished. Logs save in runs folder
+      
+      %load_ext tensorboard
+      %tensorboard --logdir runs
+  
+* Plots data, if tensorboard isn't working
+  
+      from IPython.display import Image
+      from utils.plots import plot_results  # plot results.txt as results.png
+      Image(filename='/content/yolov5/runs/train/yolov5s/results.png', width=1000)  # view results.png
+  
+* Display ground data
+      
+      print("GROUND TRUTH TRAINING DATA:")
+      Image(filename='/content/yolov5/runs/train/yolov5s/train_batch0.jpg', width=900)
+      
+* Display augmented data
+      
+      print("AUGMENTED DATA:")
+      Image(filename='/content/yolov5/runs/train/yolov5s/train_batch0.jpg', width=900)
+      
+</details>
+
+Run Inference with trained weight
+<details><summary> <b>Expand</b> </summary>
+      
+* See directory in runs trained folder
+    
+      %ls runs/train/yolov5s/weights
+      
+* Create names file for model
+    
+      import yaml
+      import ast
+      with open("/content/yolov5/Uno-Cards-3/data.yaml", 'r') as stream:
+          names = str(yaml.safe_load(stream)['names'])
+
+      namesFile = open("../data.names", "w+")
+      names = ast.literal_eval(names)
+      for name in names:
+        namesFile.write(name +'\n')
+      namesFile.close()
+      
+* Runs Trained Model with Test Images
+      
+      !python detect.py --weights runs/train/exp/weights/best.pt --img 416 --conf 0.1 --source {dataset.location}/test/images
+     
+* Display inference on All Test Images
+      
+      import glob
+      from IPython.display import Image, display
+
+      for imageName in glob.glob('/content/yolov5/inference/output/*.jpg'): #assuming JPG
+          display(Image(filename=imageName))
+          print("\n")
+      
+</details>
+
+## Export Trained Weight to GDrive
+* Login to GDrive
+    
+      from google.colab import drive
+      drive.mount('/content/gdrive')
+  
+* Export Trained Weight
+  
+      %cp /content/yolov5/runs/train/yolov5s/weights/best.pt /content/gdrive/My Drive
+    
+## Acknowledgements
+
+<details><summary> <b>Expand</b> </summary>
+
+* [Ultralytics YOLOv5 Repository](https://github.com/ultralytics/yolov5)
 
 </details>
+
 
 <details open>
 <summary>Tutorials</summary>
