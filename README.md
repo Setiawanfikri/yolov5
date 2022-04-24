@@ -96,7 +96,7 @@ Install YOLOv5 dependencies
 
 * clone YOLOv5 repository
       
-      !git clone https://github.com/ultralytics/yolov5  # clone
+      !git clone https://github.com/Setiawanfikri/yolov5  # clone
       %cd yolov5
   
 * Install necessary dependencies
